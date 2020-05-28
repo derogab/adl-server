@@ -35,12 +35,7 @@ class Analyzer(threading.Thread):
                         
                         res = {
                             "status": "OK",
-                            "type": "data",
-                            "data": {
-                                "x": str(response['data']['x']), 
-                                "y": str(response['data']['y']), 
-                                "z": str(response['data']['z'])
-                            }
+                            "type": "ack"
                         }
 
                     if response['type'] == 'close':
