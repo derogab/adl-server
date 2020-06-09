@@ -1,8 +1,11 @@
 import json
 import threading
-from analyzer import Analyzer
+from worker import Worker
+from replies import Reply
 
-class Receiver(threading.Thread):
+# Connection
+# Class for a single connection
+class Connection(threading.Thread):
     
     def __init__(self, clientAddress, clientsocket):
         threading.Thread.__init__(self)
@@ -13,18 +16,22 @@ class Receiver(threading.Thread):
     def run(self):
         print ("Connection from : ", self.caddress)
 
+        # Send back a message
         try:
-            self.csocket.send(bytes(str({"status": "OK", "type": "connection"})+"\n", 'UTF-8'))
+            self.csocket.send(Reply.ack())
         except:
             print('[Error] No handshake')
 
+        # Get all data from this connection
         while True:
             data = self.csocket.recv(1024)
 
-            mythread = Analyzer(self.csocket, data)
-            mythread.start()
+            # create a separate thread for data analysis
+            my_worker = Worker(self.csocket, data)
+            my_worker.start()
 
-            if not mythread.running:
+            if not my_worker.running:
+                print("Force disconnect")
                 break
          
         print ("Client at ", self.caddress , " disconnected...")
