@@ -47,7 +47,7 @@ class Worker(threading.Thread):
                             position = data['info']['position']
                             values = data['values']
 
-                            # insert data in my wizard
+                            # collect data in my wizard
                             self.wizard.collect(archive, index, sensor, position, values)
                             
                             
@@ -62,13 +62,16 @@ class Worker(threading.Thread):
                             position = data['info']['position']
                             values = data['values']
 
-                            # do something with learning data
+                            # collect data in my teacher
+                            self.teacher.collect(archive, index, activity, sensor, position, values)
                         
 
                     if data['type'] == Constants.request_type_close:
 
+                        # send close message
                         self.socket.send(Reply.close())
-
+                        # save collected data to datasets
+                        self.teacher.save()
                 
                 else:
                     print('[Error] Data received error.')
