@@ -2,19 +2,19 @@ import json
 import threading
 import time
 from replies import Reply
+from constants import Constants
 
 class Worker(threading.Thread):
 
-    running = True
     user = 0
 
-    def __init__(self, socket, data_received):
+    def __init__(self, socket, data_received, wizard, teacher):
         threading.Thread.__init__(self)
         self.socket = socket
         self.data_received = data_received
-        running = True
+        self.wizard = wizard
+        self.teacher = teacher
         
-
     def run(self):
         msg = self.data_received.strip().decode()
 
@@ -30,22 +30,45 @@ class Worker(threading.Thread):
                 except:
                     print('[Error] JSON decode failed.')
                 
-                if request and request['status'] == 'OK':
+                if request and request['status'] == Constants.request_status_success:
 
                     data = request['data']
-                    print(data)
 
-                    if data['type'] == 'data':
+                    if data['type'] == Constants.request_type_data:
                         
                         self.socket.send(Reply.ack())
 
-                        # do something with data
+                        if request['mode'] == Constants.request_mode_analyzer:
+                            
+                            # get data
+                            archive = data['archive']
+                            index = data['info']['index']
+                            sensor = data['info']['sensor']
+                            position = data['info']['position']
+                            values = data['values']
 
-                    if data['type'] == 'close':
+                            # insert data in my wizard
+                            self.wizard.collect(archive, index, sensor, position, values)
+                            
+                            
+
+                        if request['mode'] == Constants.request_mode_learning:
+
+                            # get data
+                            archive = data['archive']
+                            index = data['info']['index']
+                            activity = data['info']['activity']
+                            sensor = data['info']['sensor']
+                            position = data['info']['position']
+                            values = data['values']
+
+                            # do something with learning data
+                        
+
+                    if data['type'] == Constants.request_type_close:
 
                         self.socket.send(Reply.close())
 
-                        self.running = False
                 
                 else:
                     print('[Error] Data received error.')
