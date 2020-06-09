@@ -2,11 +2,6 @@ from constants import Constants
 
 class Teacher():
 
-    archive = None
-    position = None
-    activity = None    
-    collection = []
-
     def __init__(self):
         print("Teacher created.")
         # Init data
