@@ -1,8 +1,6 @@
 class Reply:
-    def __init__(self):
-
-        pass
-
+    
+    @staticmethod
     def handshake():
 
         reply = {"status": "OK", "type": "handshake"}
@@ -11,6 +9,16 @@ class Reply:
 
         return reply_bytes
 
+    @staticmethod
+    def goodbye():
+
+        reply = {"status": "OK", "type": "goodbye"}
+        reply_str = str(reply) + "\n" # \n is essential
+        reply_bytes = bytes(reply_str, 'UTF-8')
+
+        return reply_bytes
+
+    @staticmethod
     def ack():
 
         reply = {"status": "OK", "type": "ack"}
@@ -19,6 +27,7 @@ class Reply:
 
         return reply_bytes
 
+    @staticmethod
     def close():
 
         reply = {"status": "OK", "type": "close"}
@@ -26,9 +35,3 @@ class Reply:
         reply_bytes = bytes(reply_str, 'UTF-8')
 
         return reply_bytes
-
-
-# create Reply static methods
-Reply.handshake = staticmethod(Reply.handshake)
-Reply.ack       = staticmethod(Reply.ack)
-Reply.close     = staticmethod(Reply.close)
