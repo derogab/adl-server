@@ -29,7 +29,7 @@ class Teacher():
 
         # select the dataset
         file_acc = "./dataset/" + Constants.sensor_type_accelerometer + ".csv"
-        file_gyro = "./dataset/" + Constants.sensor_type_accelerometer + ".csv"
+        file_gyro = "./dataset/" + Constants.sensor_type_gyroscope + ".csv"
 
         # save the collection to storage
         with open(file_acc, "a+") as f:
