@@ -11,13 +11,21 @@ from teacher import Teacher
 class Connection(threading.Thread):
     
     def __init__(self, clientAddress, clientsocket):
+        # Init thread
         threading.Thread.__init__(self)
+        # Init data
         self.csocket = clientsocket
         self.caddress = clientAddress
-        print ("New connection added: ", clientAddress)
+        print ('[Info] New connection added: ', clientAddress)
+
+    def __send_message(self, msg):
+        try:
+            self.csocket.send(msg)
+        except:
+            print('[Warning] Connection already closed by client.')
     
     def run(self):
-        print ("Connection from : ", self.caddress)
+        print ('[Info] Connection from : ', self.caddress)
 
         # Send back a message
         try:
@@ -34,7 +42,11 @@ class Connection(threading.Thread):
 
         # Get all data from this connection
         while True:
-            data = self.csocket.recv(2048)
+
+            try:
+                data = self.csocket.recv(4096)
+            except:
+                print('[Warning] Connection closed by client.')
 
             if data:
                 # Create a separate thread for data analysis
@@ -48,14 +60,16 @@ class Connection(threading.Thread):
 
             # Check timeout
             if timeout > Constants.connection_max_timeout:
-                print("Force disconnect")
+                print('[Info] Force disconnect')
+                
+                try:
+                    my_worker.kill()
+                except:
+                    print('[Warning] No worker available.')
+
                 break
-         
 
         # Send closing a message
-        try:
-            self.csocket.send(Reply.goodbye())
-        except:
-            print('[Warning] Connection already closed by client.')
-
-        print ("Client at ", self.caddress , " disconnected...")
+        self.__send_message(Reply.goodbye())
+        
+        print ('[Info] Client at ', self.caddress , ' disconnected...')

@@ -1,15 +1,18 @@
+import threading
 from constants import Constants
+from powers import Power
 
-class Teacher():
+class Teacher(threading.Thread):
 
     def __init__(self):
-        print("Teacher created.")
+        # Init thread
+        threading.Thread.__init__(self)
         # Init data
         self.archive = None
         self.position = None
         self.activity = None    
         self.collection = []
-        pass
+        self.power = Power()
 
     def collect(self, archive, index, activity, sensor, position, values):
 
@@ -20,12 +23,12 @@ class Teacher():
         x = values['x']
         y = values['y']
         z = values['z']
+        t = values['t']
 
-        self.collection.append([sensor, index, x, y, z])
-
-        pass
+        self.collection.append([sensor, index, x, y, z, t])
 
     def save(self):
+        print('[Info] Save...')
 
         # select the dataset
         file_acc = "./dataset/" + Constants.sensor_type_accelerometer + ".csv"
@@ -35,33 +38,31 @@ class Teacher():
         with open(file_acc, "a+") as f:
             for row in self.collection:
                 if row[0] == Constants.sensor_type_accelerometer: #check sensor
-                    # archive, position, index, x, y, z, activity
+                    # archive, index, x, y, z, t, position, activity
                     f.write(str(self.archive)+ "," \
-                        + str(self.position) + "," \
                         + str(row[1]) + "," \
                         + str(row[2]) + "," \
                         + str(row[3]) + "," \
                         + str(row[4]) + "," \
+                        + str(row[5]) + "," \
+                        + str(self.position) + "," \
                         + str(self.activity) + ';\n')
 
         with open(file_gyro, "a+") as f:
             for row in self.collection:
                 if row[0] == Constants.sensor_type_gyroscope: #check sensor
-                    # archive, position, index, x, y, z, activity
+                    # archive, index, x, y, z, t, position, activity
                     f.write(str(self.archive)+ "," \
-                        + str(self.position) + "," \
                         + str(row[1]) + "," \
                         + str(row[2]) + "," \
                         + str(row[3]) + "," \
                         + str(row[4]) + "," \
+                        + str(row[5]) + "," \
+                        + str(self.position) + "," \
                         + str(self.activity) + ';\n')
 
-        pass
-
-    def teach(self):
+    def run(self):
+        print('[Info] Teaching...')
         
-        # fit here
-
-        pass
-    
-    pass
+        self.power.teach('dataset/accelerometer.csv', 'models/accelerometer.h5')
+        #self.power.teach('dataset/gyroscope.csv', 'models/gyroscope.h5')

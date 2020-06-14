@@ -1,4 +1,7 @@
 class Reply:
+
+    def __init__(self):
+        raise TypeError("cannot create 'Reply' instances")
     
     @staticmethod
     def handshake():
@@ -31,6 +34,15 @@ class Reply:
     def close():
 
         reply = {"status": "OK", "type": "close"}
+        reply_str = str(reply) + "\n" # \n is essential
+        reply_bytes = bytes(reply_str, 'UTF-8')
+
+        return reply_bytes
+
+    @staticmethod
+    def prediction(activity):
+
+        reply = {"status": "OK", "type": "prediction", "activity": activity}
         reply_str = str(reply) + "\n" # \n is essential
         reply_bytes = bytes(reply_str, 'UTF-8')
 

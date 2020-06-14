@@ -1,12 +1,17 @@
 # Constants
 # Class w/ useful constants
 class Constants:
-    # connection
+
+    def __init__(self):
+        raise TypeError("cannot create 'Constants' instances")
+
+    # Connection
     connection_max_timeout = 9999999
-    # sensor type
+    something_value = 100
+    # Sensor type
     sensor_type_accelerometer = "accelerometer"
     sensor_type_gyroscope = "gyroscope"
-    # request
+    # Request
     request_status_success = "OK"
     request_mode_analyzer = "analyzer"
     request_mode_learning = "learning"
