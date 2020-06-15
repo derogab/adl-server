@@ -7,7 +7,7 @@ class Constants:
 
     # Connection
     connection_max_timeout = 9999999
-    something_value = 100
+    something_value = 500
     # Sensor type
     sensor_type_accelerometer = "accelerometer"
     sensor_type_gyroscope = "gyroscope"

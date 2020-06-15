@@ -1,27 +1,15 @@
 from __future__ import print_function
-
+from constants import Constants
 import h5py
-
+import urllib.request, json 
 import numpy as np
 import pandas as pd
-import coremltools
 from scipy import stats
-from IPython.display import display, HTML
-
-from sklearn import metrics
-from sklearn.metrics import classification_report
-from sklearn import preprocessing
-
+from sklearn import metrics, preprocessing
 import keras
-from keras.models import load_model
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Flatten, Reshape
-from keras.layers import Conv2D, MaxPooling2D
 from keras.utils import np_utils
-
-import urllib.request, json 
-
-from constants import Constants
+from keras.models import load_model, Sequential
+from keras.layers import Dense, Flatten, Reshape
 
 class Power:
 
