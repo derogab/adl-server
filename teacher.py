@@ -31,8 +31,8 @@ class Teacher(threading.Thread):
         print('[Info] Save...')
 
         # select the dataset
-        file_acc = "./dataset/" + Constants.sensor_type_accelerometer + ".csv"
-        file_gyro = "./dataset/" + Constants.sensor_type_gyroscope + ".csv"
+        file_acc = Constants.datasets_path + Constants.sensor_type_accelerometer + ".csv"
+        file_gyro = Constants.datasets_path + Constants.sensor_type_gyroscope + ".csv"
 
         # save the collection to storage
         with open(file_acc, "a+") as f:
@@ -63,6 +63,4 @@ class Teacher(threading.Thread):
 
     def run(self):
         print('[Info] Teaching...')
-        
-        self.power.teach('dataset/accelerometer.csv', 'models/accelerometer.h5')
-        #self.power.teach('dataset/gyroscope.csv', 'models/gyroscope.h5')
+        self.power.teach()

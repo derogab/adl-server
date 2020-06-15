@@ -17,4 +17,7 @@ class Constants:
     request_mode_learning = "learning"
     request_type_data = "data"
     request_type_close = "close"
-
+    # Paths
+    datasets_path = "./datasets/"
+    models_path = "./models/"
+    tmp_path = "./tmp/"

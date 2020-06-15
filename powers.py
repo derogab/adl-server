@@ -121,7 +121,7 @@ class Power:
 
 
     ### Main method ###
-    def __teach_using(self, dataset_path, model_path):
+    def __teach_using(self, dataset_file, model_file):
 
         # Set some standard parameters upfront
         pd.options.display.float_format = '{:.1f}'.format
@@ -136,7 +136,7 @@ class Power:
         EPOCHS = 50
 
         # Load data set containing all the data from csv
-        df = self.__read_data(dataset_path)
+        df = self.__read_data(dataset_file)
         # Describe the data
         self.__show_basic_dataframe_info(df)
 
@@ -208,7 +208,7 @@ class Power:
         # Callback list
         callbacks_list = [
             keras.callbacks.ModelCheckpoint(
-                filepath='models/tmp/best_model.{epoch:02d}-{val_loss:.2f}.h5',
+                filepath=Constants.tmp_path+'best_model.{epoch:02d}-{val_loss:.2f}.h5',
                 monitor='val_loss', save_best_only=True),
             keras.callbacks.EarlyStopping(monitor='accuracy', patience=1)
         ]
@@ -235,24 +235,23 @@ class Power:
             print("%s: %.2f%%" % (model_m.metrics_names[1], scores[1]*100))
 
             # save the network to disk
-            print("[INFO] serializing network to '{}'...".format(model_path))
-            model_m.save(model_path, overwrite=True)
+            print("[INFO] serializing network to '{}'...".format(model_file))
+            model_m.save(model_file, overwrite=True)
 
         except:
             print('[Warning] Still little data to learn...')
 
 
-    def teach(self, dataset_path, model_path):
-
-        self.__teach_using('dataset/accelerometer.csv', 'models/accelerometer.h5')
-        #self.power.teach('dataset/gyroscope.csv', 'models/gyroscope.h5')
+    def teach(self):
+        self.__teach_using(Constants.datasets_path + Constants.sensor_type_accelerometer + '.csv', Constants.models_path + Constants.sensor_type_accelerometer + '.h5')
+        #self.__teach_using(Constants.datasets_path + Constants.sensor_type_gyroscope + '.csv', Constants.models_path + Constants.sensor_type_gyroscope + '.h5')
 
     # Program to find most frequent  
     # element in a list 
     def __most_frequent(self, my_list):
         return np.bincount(my_list).argmax()
 
-    def __predict_using(self, df, model_path):
+    def __predict_using(self, df, model_file):
 
         # Set some standard parameters upfront
         pd.options.display.float_format = '{:.1f}'.format
@@ -299,7 +298,7 @@ class Power:
         keras.backend.tensorflow_backend._SYMBOLIC_SCOPE.value = True
 
         # load json and create model
-        loaded_model = load_model(model_path)
+        loaded_model = load_model(model_file)
 
         print(loaded_model.summary())
 
@@ -340,8 +339,8 @@ class Power:
         #self.__show_basic_dataframe_info(df_gyro)
 
         # Predictions
-        prediction_acc, accuracy_acc = self.__predict_using(df_acc, 'models/accelerometer.h5')
-        #prediction_gyro, accuracy_gyro = self.__predict_using(df_gyro, 'models/gyroscope.h5')
+        prediction_acc, accuracy_acc = self.__predict_using(df_acc, Constants.models_path + Constants.sensor_type_accelerometer + '.h5')
+        #prediction_gyro, accuracy_gyro = self.__predict_using(df_gyro, Constants.models_path + Constants.sensor_type_gyroscope + '.h5')
 
         # Select best prediction
         
