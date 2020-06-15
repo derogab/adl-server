@@ -18,6 +18,6 @@ class Constants:
     request_type_data = "data"
     request_type_close = "close"
     # Paths
-    datasets_path = "./datasets/"
-    models_path = "./models/"
-    tmp_path = "./tmp/"
+    datasets_path = "/datasets/"
+    models_path = "/models/"
+    tmp_path = "/tmp/"
