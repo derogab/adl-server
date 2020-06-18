@@ -67,12 +67,23 @@ class Power:
 
         return df
 
-    # Function to have some informations about file
+    # Function to get some informations about file
+    def __get_basic_dataframe_info(self, dataframe):
+
+        columns = dataframe.shape[1]
+        rows = dataframe.shape[0]
+
+        return rows, columns
+
+    # Function to print some informations about file
     def __show_basic_dataframe_info(self, dataframe):
 
+        # Get rows and columns
+        rows, columns = self.__get_basic_dataframe_info(dataframe)
+
         # Shape and how many rows and columns
-        print('Number of columns in the dataframe: %i' % (dataframe.shape[1]))
-        print('Number of rows in the dataframe: %i\n' % (dataframe.shape[0]))
+        print('Number of columns in the dataframe: %i' % columns)
+        print('Number of rows in the dataframe: %i\n' % rows)
 
     # num features
     def __num_features(self):
@@ -137,8 +148,6 @@ class Power:
 
         # Load data set containing all the data from csv
         df = self.__read_data(dataset_file)
-        # Describe the data
-        self.__show_basic_dataframe_info(df)
 
         # Transform non numeric column in numeric
         df['user-id-encoded'] = preprocessing.LabelEncoder().fit_transform(df['user-id'].values.ravel())
@@ -166,10 +175,6 @@ class Power:
         # Create segments and labels
         x_train, y_train = self.__create_segments_and_labels(df_train, TIME_PERIODS, STEP_DISTANCE, 'activity')
 
-        print('x_train shape: ', x_train.shape)
-        print(x_train.shape[0], 'training samples')
-        print('y_train shape: ', y_train.shape)
-
         # Set input & output dimensions
         num_time_periods, num_sensors = x_train.shape[1], x_train.shape[2]
         num_classes = self.__num_activity()
@@ -177,8 +182,6 @@ class Power:
         # compress two-dimensional data in one-dimensional data
         input_shape = (num_time_periods*num_sensors)
         x_train = x_train.reshape(x_train.shape[0], input_shape)
-        print('x_train shape:', x_train.shape)
-        print('input_shape:', input_shape)
 
         # convert data to float: keras want float data
         x_train = x_train.astype('float32')
@@ -186,7 +189,6 @@ class Power:
 
         # https://www.tensorflow.org/api_docs/python/tf/keras/utils/to_categorical
         y_train_hot = np_utils.to_categorical(y_train, num_classes)
-        print('New y_train shape: ', y_train_hot.shape)
 
         # machine learning
         model_m = Sequential()
@@ -203,7 +205,6 @@ class Power:
         model_m.add(Dense(100, activation='relu'))
         model_m.add(Flatten())
         model_m.add(Dense(num_classes, activation='softmax'))
-        print(model_m.summary())
 
         # Callback list
         callbacks_list = [
@@ -232,7 +233,7 @@ class Power:
 
             # evaluate the model
             scores = model_m.evaluate(x_train, y_train_hot, verbose=0)
-            print("%s: %.2f%%" % (model_m.metrics_names[1], scores[1]*100))
+            print("[METRICS] %s: %.2f%%" % (model_m.metrics_names[1], scores[1]*100))
 
             # save the network to disk
             print("[INFO] serializing network to '{}'...".format(model_file))
@@ -276,9 +277,6 @@ class Power:
         # Create segments
         x_pred = self.__create_segments(df, TIME_PERIODS, STEP_DISTANCE)
 
-        print('x_pred shape: ', x_pred.shape)
-        print(x_pred.shape[0], 'training samples')
-
         # Set input & output dimensions
         num_time_periods, num_sensors = x_pred.shape[1], x_pred.shape[2]
         num_classes = self.__num_activity()
@@ -286,8 +284,6 @@ class Power:
         # compress two-dimensional data in one-dimensional data
         input_shape = (num_time_periods*num_sensors)
         x_pred = x_pred.reshape(x_pred.shape[0], input_shape)
-        print('x_pred shape:', x_pred.shape)
-        print('input_shape:', input_shape)
 
         # convert data to float: keras want float data
         x_pred = x_pred.astype('float32')
@@ -300,8 +296,6 @@ class Power:
         # load json and create model
         loaded_model = load_model(model_file)
 
-        print(loaded_model.summary())
-
         # evaluate loaded model on test data
         loaded_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
@@ -311,15 +305,12 @@ class Power:
         # Take the class with the highest probability from the test predictions
         max_y_pred_test = np.argmax(y_pred_test, axis=1)
 
-        
-        print('max_y_pred_test', max_y_pred_test)
         # Take more frequent result
         prediction = self.__most_frequent(max_y_pred_test)
 
         # Calculate accuracy
         accuracy = None
 
-        
         print('prediction', prediction)
 
         return prediction, accuracy
@@ -333,10 +324,6 @@ class Power:
         # Create dataframes from lists
         df_acc  = pd.DataFrame(data=data_acc)
         #df_gyro = pd.DataFrame(data=data_gyro)
-
-        # Describe the data
-        self.__show_basic_dataframe_info(df_acc)
-        #self.__show_basic_dataframe_info(df_gyro)
 
         # Predictions
         prediction_acc, accuracy_acc = self.__predict_using(df_acc, Constants.models_path + Constants.sensor_type_accelerometer + '.h5')
