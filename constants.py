@@ -10,7 +10,12 @@ class Constants:
     server_port = 3000
     # Connection
     connection_max_timeout = 9999999
-    something_value = 500
+    something_value = 200
+    # ML params
+    ml_time_periods = 200
+    ml_step_distance = 100
+    ml_batch_size = 100
+    ml_epoch = 50
     # Sensor type
     sensor_type_accelerometer = "accelerometer"
     sensor_type_gyroscope = "gyroscope"

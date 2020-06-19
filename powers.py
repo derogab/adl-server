@@ -137,14 +137,14 @@ class Power:
         # Set some standard parameters upfront
         pd.options.display.float_format = '{:.1f}'.format
         # The number of steps within one time segment
-        TIME_PERIODS = 40
+        TIME_PERIODS = Constants.ml_time_periods
         # The steps to take from one segment to the next; if this value is equal to
         # TIME_PERIODS, then there is no overlap between the segments
-        STEP_DISTANCE = 40
+        STEP_DISTANCE = Constants.ml_step_distance
 
         # Hyper-parameters
-        BATCH_SIZE = 20 # https://stats.stackexchange.com/questions/153531/what-is-batch-size-in-neural-network
-        EPOCHS = 50
+        BATCH_SIZE = Constants.ml_batch_size # https://stats.stackexchange.com/questions/153531/what-is-batch-size-in-neural-network
+        EPOCHS = Constants.ml_epoch
 
         # Load data set containing all the data from csv
         df = self.__read_data(dataset_file)
@@ -156,9 +156,15 @@ class Power:
         df['phone-position'] = [self.__convert_to_float(x) for x in df['phone-position'].to_numpy()]
         df['activity'] = [self.__convert_to_float(x) for x in df['activity'].to_numpy()]
 
+        # Get archives num
+        archives_num = df['user-id-encoded'].nunique()
+        
+        # Calculate the point where to divide
+        division_point = archives_num / 3 # 1/3 to test, 2/3 to train 
+
         # Differentiate between test set and training set
-        df_train = df[df['user-id-encoded'] > 8]
-        df_test = df[df['user-id-encoded'] <= 8]
+        df_train = df[df['user-id-encoded'] > division_point]
+        df_test = df[df['user-id-encoded'] <= division_point]
 
         # Normalize features for training data set (values between 0 and 1)
         # Surpress warning for next 3 operation
@@ -257,10 +263,10 @@ class Power:
         # Set some standard parameters upfront
         pd.options.display.float_format = '{:.1f}'.format
         # The number of steps within one time segment
-        TIME_PERIODS = 40
+        TIME_PERIODS = Constants.ml_time_periods
         # The steps to take from one segment to the next; if this value is equal to
         # TIME_PERIODS, then there is no overlap between the segments
-        STEP_DISTANCE = 40
+        STEP_DISTANCE = Constants.ml_step_distance
 
         # Normalize features for training data set (values between 0 and 1)
         # Surpress warning for next 3 operation
@@ -311,7 +317,8 @@ class Power:
         # Calculate accuracy
         accuracy = None
 
-        print('prediction', prediction)
+        # Result
+        print('[RESULT] Prediction', prediction)
 
         return prediction, accuracy
 
