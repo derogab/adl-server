@@ -40,23 +40,36 @@ class Connection(threading.Thread):
         teacher = Teacher()
         wizard = Wizard()
 
+        # create queue
+        queue = ''
+
         # Get all data from this connection
         while True:
 
             try:
-                data = self.csocket.recv(4096)
+                data = self.csocket.recv(2048)
             except:
                 print('[Warning] Connection closed by client.')
 
             if data:
-                # Create a separate thread for data analysis
-                my_worker = Worker(self.csocket, data, wizard, teacher)
-                my_worker.start()
+                # decode data
+                data = data.decode()
+                # add data to queue
+                queue = queue + data
                 # Reinit timeout
                 timeout = 0
             else:
                 # Increse timeout
                 timeout = timeout + 1
+
+            if queue:
+                # Cut point
+                cut = queue.rfind('\n')+1
+                # Create a separate thread for data analysis
+                my_worker = Worker(self.csocket, queue[:cut], wizard, teacher)
+                my_worker.start()
+                # Pop queue
+                queue = queue[cut:]
 
             # Check timeout
             if timeout > Constants.connection_max_timeout:

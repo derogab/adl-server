@@ -38,7 +38,7 @@ class Worker(threading.Thread):
             self.teacher.start()
 
     def run(self):
-        msg = self.data_received.strip().decode()
+        msg = self.data_received.strip()
 
         if msg:
 
@@ -46,67 +46,71 @@ class Worker(threading.Thread):
 
             for x in array:
 
-                request = False
-                try:
-                    request = json.loads(x)
-                except:
-                    print('[Error] JSON decode failed.')
-                
-                if request and request['status'] == Constants.request_status_success:
+                x = x.strip()
 
-                    data = request['data']
+                if x:
 
-                    if data['type'] == Constants.request_type_data:
-                        
-                        # send ack
-                        self.__send_message(Reply.ack())
+                    request = False
+                    try:
+                        request = json.loads(x)
+                    except:
+                        print('[Error] JSON decode failed.')
+                    
+                    if request and request['status'] == Constants.request_status_success:
 
-                        # mode
-                        if request['mode'] == Constants.request_mode_analyzer:
+                        data = request['data']
 
-                            # kill teacher
-                            self.teacher = None
+                        if data['type'] == Constants.request_type_data:
                             
-                            # get data
-                            archive = data['archive']
-                            index = data['info']['index']
-                            sensor = data['info']['sensor']
-                            position = data['info']['position']
-                            values = data['values']
+                            # send ack
+                            self.__send_message(Reply.ack())
 
-                            # collect data in my wizard
-                            self.wizard.collect(archive, index, sensor, position, values)
+                            # mode
+                            if request['mode'] == Constants.request_mode_analyzer:
 
-                            # predict sometimes
-                            if index % Constants.something_value == 0:
-                                prediction, accuracy = self.wizard.predict()
-                                # send prediction
-                                self.__send_message(Reply.prediction(prediction))
-                           
+                                # kill teacher
+                                self.teacher = None
+                                
+                                # get data
+                                archive = data['archive']
+                                index = data['info']['index']
+                                sensor = data['info']['sensor']
+                                position = data['info']['position']
+                                values = data['values']
 
-                        if request['mode'] == Constants.request_mode_learning:
+                                # collect data in my wizard
+                                self.wizard.collect(archive, index, sensor, position, values)
 
-                            # kill wizard
-                            self.wizard = None
+                                # predict sometimes
+                                if index % Constants.something_value == 0:
+                                    prediction, accuracy = self.wizard.predict()
+                                    # send prediction
+                                    self.__send_message(Reply.prediction(prediction))
+                            
 
-                            # get data
-                            archive = data['archive']
-                            index = data['info']['index']
-                            activity = data['info']['activity']
-                            sensor = data['info']['sensor']
-                            position = data['info']['position']
-                            values = data['values']
+                            if request['mode'] == Constants.request_mode_learning:
 
-                            # collect data in my teacher
-                            self.teacher.collect(archive, index, activity, sensor, position, values)
-                        
+                                # kill wizard
+                                self.wizard = None
 
-                    if data['type'] == Constants.request_type_close:
+                                # get data
+                                archive = data['archive']
+                                index = data['info']['index']
+                                activity = data['info']['activity']
+                                sensor = data['info']['sensor']
+                                position = data['info']['position']
+                                values = data['values']
 
-                        self.__at_the_end()
-                
-                else:
-                    print('[Error] Data received error.')                    
+                                # collect data in my teacher
+                                self.teacher.collect(archive, index, activity, sensor, position, values)
+                            
+
+                        if data['type'] == Constants.request_type_close:
+
+                            self.__at_the_end()
+                    
+                    else:
+                        print('[Error] Data received error.')                    
 
     def kill(self):
         print('[Info] Killing worker...')
