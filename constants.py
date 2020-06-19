@@ -5,6 +5,9 @@ class Constants:
     def __init__(self):
         raise TypeError("cannot create 'Constants' instances")
 
+    # Server
+    server_host = ""
+    server_port = 3000
     # Connection
     connection_max_timeout = 9999999
     something_value = 500

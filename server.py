@@ -1,9 +1,10 @@
 import socket
+from constants import Constants
 from connection import Connection
 
 # server socket
-LOCALHOST = ""
-PORT = 3000
+LOCALHOST = Constants.server_host
+PORT = Constants.server_port
 # initialize & bind socket
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
