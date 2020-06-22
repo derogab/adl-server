@@ -40,6 +40,15 @@ class Reply:
         return reply_bytes
 
     @staticmethod
+    def destroy():
+
+        reply = {"status": "OK", "type": "destroy"}
+        reply_str = str(reply) + "\n" # \n is essential
+        reply_bytes = bytes(reply_str, 'UTF-8')
+
+        return reply_bytes
+
+    @staticmethod
     def prediction(activity):
 
         reply = {"status": "OK", "type": "prediction", "activity": activity}

@@ -25,6 +25,7 @@ class Constants:
     request_mode_learning = "learning"
     request_type_data = "data"
     request_type_close = "close"
+    request_type_destroy = "destroy"
     # Paths
     datasets_path = "/datasets/"
     models_path = "/models/"

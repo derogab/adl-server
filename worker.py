@@ -21,22 +21,6 @@ class Worker(threading.Thread):
         except:
             print('[Warning] Connection already closed by client.')
 
-    def __at_the_end(self):
-        print('[Info] All data received. Starting TODO work list...')
-        
-        # send close message
-        try:
-            self.__send_message(Reply.close())
-        except:
-            print('[Warning] Connection already closed by client.')
-
-        # save collected data to datasets
-        if self.teacher:
-            self.teacher.save()
-        # train all the data
-        if self.teacher:
-            self.teacher.start()
-
     def run(self):
         msg = self.data_received.strip()
 
@@ -58,15 +42,21 @@ class Worker(threading.Thread):
                     
                     if request and request['status'] == Constants.request_status_success:
 
+                        # get mode
+                        mode = request['mode']
+                        # get data
                         data = request['data']
 
+                        
+
+                        # exec something by type
                         if data['type'] == Constants.request_type_data:
                             
                             # send ack
                             self.__send_message(Reply.ack())
 
                             # mode
-                            if request['mode'] == Constants.request_mode_analyzer:
+                            if mode == Constants.request_mode_analyzer:
 
                                 # kill teacher
                                 self.teacher = None
@@ -88,7 +78,7 @@ class Worker(threading.Thread):
                                     self.__send_message(Reply.prediction(prediction))
                             
 
-                            if request['mode'] == Constants.request_mode_learning:
+                            if mode == Constants.request_mode_learning:
 
                                 # kill wizard
                                 self.wizard = None
@@ -107,12 +97,33 @@ class Worker(threading.Thread):
 
                         if data['type'] == Constants.request_type_close:
 
-                            self.__at_the_end()
+                            print('[Info] All data received. Saving collected data...')
+                            
+                            # send close message
+                            try:
+                                self.__send_message(Reply.close())
+                            except:
+                                print('[Warning] Connection already closed by client.')
+
+                            # save received data
+                            if self.teacher and mode == Constants.request_mode_learning:
+                                # save collected data to datasets
+                                self.teacher.save()                            
+
+                        if data['type'] == Constants.request_type_destroy:
+
+                            print('[Info] Client destroyed. Train the model...')
+                            
+                            # send close message
+                            try:
+                                self.__send_message(Reply.destroy())
+                            except:
+                                print('[Warning] Connection already closed by client.')
+
+                            # save received data
+                            if self.teacher and mode == Constants.request_mode_learning:
+                                # train all the data
+                                self.teacher.teach()
                     
                     else:
-                        print('[Error] Data received error.')                    
-
-    def kill(self):
-        print('[Info] Killing worker...')
-        # On kill worker start after learning todo list
-        self.__at_the_end()
+                        print('[Error] Data received error.')       

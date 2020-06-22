@@ -1,4 +1,3 @@
-from __future__ import print_function
 from constants import Constants
 import h5py
 import urllib.request, json 

@@ -74,12 +74,6 @@ class Connection(threading.Thread):
             # Check timeout
             if timeout > Constants.connection_max_timeout:
                 print('[Info] Force disconnect')
-                
-                try:
-                    my_worker.kill()
-                except:
-                    print('[Warning] No worker available.')
-
                 break
 
         # Send closing a message
