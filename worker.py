@@ -97,7 +97,7 @@ class Worker(threading.Thread):
 
                         if data['type'] == Constants.request_type_close:
 
-                            print('[Info] All data received. Saving collected data...')
+                            print('[Info] All data received.')
                             
                             # send close message
                             try:
@@ -112,7 +112,7 @@ class Worker(threading.Thread):
 
                         if data['type'] == Constants.request_type_destroy:
 
-                            print('[Info] Client destroyed. Train the model...')
+                            print('[Info] Client destroyed.')
                             
                             # send close message
                             try:

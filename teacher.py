@@ -29,6 +29,8 @@ class Teacher:
         self.collection.append([sensor, index, x, y, z, t])
 
     def save(self):
+
+        print('[Info] Saving collected data...')
         
         if not self.hasBeenSaved:
             
@@ -68,6 +70,8 @@ class Teacher:
 
 
     def teach(self):
+
+        print('[Info] Train all the dataset...')
 
         # wait save
         i = 1
