@@ -52,10 +52,16 @@ class Connection(threading.Thread):
                 print('[Warning] Connection closed by client.')
 
             if data:
-                # decode data
-                data = data.decode()
-                # add data to queue
-                queue = queue + data
+                
+                try:
+                    # decode data
+                    data = data.decode()
+                    # add data to queue
+                    queue = queue + data
+                except:
+                    # nothing to do
+                    pass
+
                 # Reinit timeout
                 timeout = 0
             else:
