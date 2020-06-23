@@ -25,27 +25,27 @@ class Wizard():
     def predict(self):
         print('[Info] Do a magic...')
 
-        # save collection status
+        # snapshot collection 
         collection = self.collection
-        # save position statis
+        # snapshot position
         position = self.position
 
         # Get the accelerometer data
         acc = {
-            'x-axis':           [row[2] for row in collection if row[0] == Constants.sensor_type_accelerometer],
-            'y-axis':           [row[3] for row in collection if row[0] == Constants.sensor_type_accelerometer],
-            'z-axis':           [row[4] for row in collection if row[0] == Constants.sensor_type_accelerometer],
-            'timestamp':        [row[5] for row in collection if row[0] == Constants.sensor_type_accelerometer],
-            'phone-position':   position
+            'x-axis':           [row[2]     for row in collection if row[0] == Constants.sensor_type_accelerometer],
+            'y-axis':           [row[3]     for row in collection if row[0] == Constants.sensor_type_accelerometer],
+            'z-axis':           [row[4]     for row in collection if row[0] == Constants.sensor_type_accelerometer],
+            'timestamp':        [row[5]     for row in collection if row[0] == Constants.sensor_type_accelerometer],
+            'phone-position':   [position   for row in collection if row[0] == Constants.sensor_type_accelerometer],
         }
 
         # Get the gyroscope data
         gyro = {
-            'x-axis':           [row[2] for row in collection if row[0] == Constants.sensor_type_gyroscope],
-            'y-axis':           [row[3] for row in collection if row[0] == Constants.sensor_type_gyroscope],
-            'z-axis':           [row[4] for row in collection if row[0] == Constants.sensor_type_gyroscope],
-            'timestamp':        [row[5] for row in collection if row[0] == Constants.sensor_type_gyroscope],
-            'phone-position':   position
+            'x-axis':           [row[2]     for row in collection if row[0] == Constants.sensor_type_gyroscope],
+            'y-axis':           [row[3]     for row in collection if row[0] == Constants.sensor_type_gyroscope],
+            'z-axis':           [row[4]     for row in collection if row[0] == Constants.sensor_type_gyroscope],
+            'timestamp':        [row[5]     for row in collection if row[0] == Constants.sensor_type_gyroscope],
+            'phone-position':   [position   for row in collection if row[0] == Constants.sensor_type_gyroscope],
         }
 
         # Compress data
