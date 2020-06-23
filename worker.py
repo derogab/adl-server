@@ -97,7 +97,7 @@ class Worker(threading.Thread):
 
                         if data['type'] == Constants.request_type_close:
 
-                            print('[Info] All data received.')
+                            print('[Info] Closing connection.')
                             
                             # send close message
                             try:
