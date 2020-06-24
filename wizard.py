@@ -1,5 +1,6 @@
 from constants import Constants
 from powers import Power
+import math
 
 class Wizard():
 
@@ -29,6 +30,28 @@ class Wizard():
         collection = self.collection
         # snapshot position
         position = self.position
+
+        # timestamp to relative & distance
+        timestamp_min_acc = math.inf
+        timestamp_min_gyro = math.inf
+        previous_row_acc = None
+        previous_row_gyro = None
+        for row in collection:
+            if row[5] < timestamp_min_acc and row[0] == Constants.sensor_type_accelerometer:
+                timestamp_min_acc = row[5]
+            if row[5] < timestamp_min_gyro and row[0] == Constants.sensor_type_gyroscope:
+                timestamp_min_gyro = row[5]
+        for row in collection:
+            if row[0] == Constants.sensor_type_accelerometer:
+                row[5] = row[5] - timestamp_min_acc # absolute to relative
+                if previous_row_acc:
+                    row[5] = row[5] - previous_row_acc[5] # distance
+                previous_row_acc = row
+            if row[0] == Constants.sensor_type_gyroscope:
+                row[5] = row[5] - timestamp_min_gyro # absolute to relative
+                if previous_row_gyro:
+                    row[5] = row[5] - previous_row_gyro[5] # distance
+                previous_row_gyro = row            
 
         # Get the accelerometer data
         acc = {
