@@ -10,6 +10,21 @@ from keras.utils import np_utils
 from keras.models import load_model, Sequential
 from keras.layers import Dense, Flatten, Reshape
 
+# Active debug mode
+debug = False
+
+if debug:
+    
+    from matplotlib import pyplot as plt
+    import seaborn as sns
+    from IPython.display import display, HTML
+    from sklearn.metrics import classification_report
+    from keras.layers import Conv2D, MaxPooling2D
+    from scipy import stats
+
+    sns.set() # Default seaborn look and feel
+    plt.style.use('ggplot')
+
 # Set some standard parameters upfront
 pd.options.display.float_format = '{:.1f}'.format
 # Surpress warning for some operation
@@ -176,8 +191,37 @@ class Power:
         # Round numbers
         df = df.round({'x-axis': 4, 'y-axis': 4, 'z-axis': 4, 'timestamp': 4, 'phone-position': 4})
 
-        return df      
+        return df
 
+    def __plot_activity(self, activity, data):
+
+        fig, (ax0, ax1, ax2) = plt.subplots(nrows=3, figsize=(15, 10), sharex=True)
+        self.__plot_axis(ax0, data['timestamp'], data['x-axis'], 'X-Axis')
+        self.__plot_axis(ax1, data['timestamp'], data['y-axis'], 'Y-Axis')
+        self.__plot_axis(ax2, data['timestamp'], data['z-axis'], 'Z-Axis')
+        plt.subplots_adjust(hspace=0.2)
+        fig.suptitle(activity)
+        plt.subplots_adjust(top=0.90)
+        plt.show()
+
+    def __plot_axis(self, ax, x, y, title):
+
+        ax.plot(x, y, 'r')
+        ax.set_title(title)
+        ax.xaxis.set_visible(False)
+        ax.set_ylim([min(y) - np.std(y), max(y) + np.std(y)])
+        ax.set_xlim([min(x), max(x)])
+        ax.grid(True)
+
+    def __show_dataset_graphs(self, df):
+
+        # Show how many data for each activity
+        df['activity'].value_counts().plot(kind='bar', title='Data by Activity Type')
+        plt.show()
+
+        for activity in np.unique(df['activity']):
+            subset = df[df['activity'] == activity][:180]
+            self.__plot_activity(activity, subset)
 
     ### Main method ###
     def __teach_using(self, dataset_file, model_file):
@@ -194,6 +238,11 @@ class Power:
 
         # Load data set containing all the data from csv
         df = self.__read_data(dataset_file)
+
+        # show data
+        if debug:
+            self.__show_dataset_graphs(df)
+            pass
 
         # Transform non numeric column in numeric
         df['user-id-encoded'] = preprocessing.LabelEncoder().fit_transform(df['user-id'].values.ravel())
