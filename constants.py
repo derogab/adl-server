@@ -13,7 +13,7 @@ class Constants:
     something_value = 200
     # ML params
     ml_time_periods = 200
-    ml_step_distance = 100
+    ml_step_distance = 20
     ml_batch_size = 100
     ml_epoch = 50
     # Sensor type

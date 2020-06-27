@@ -31,6 +31,9 @@ class Wizard():
         # snapshot position
         position = self.position
 
+        print('[Info] Magic w/ ', len([row for row in collection if row[0] == Constants.sensor_type_accelerometer]), 'accelerometer data')
+        print('[Info] Magic w/ ', len([row for row in collection if row[0] == Constants.sensor_type_gyroscope]), 'gyroscope data')
+
         # timestamp to relative & distance
         timestamp_min_acc = math.inf
         timestamp_min_gyro = math.inf
@@ -59,7 +62,7 @@ class Wizard():
             'y-axis':           [row[3]     for row in collection if row[0] == Constants.sensor_type_accelerometer],
             'z-axis':           [row[4]     for row in collection if row[0] == Constants.sensor_type_accelerometer],
             'timestamp':        [row[5]     for row in collection if row[0] == Constants.sensor_type_accelerometer],
-            'phone-position':   [position   for row in collection if row[0] == Constants.sensor_type_accelerometer],
+            'phone-position':   [position   for row in collection if row[0] == Constants.sensor_type_accelerometer]
         }
 
         # Get the gyroscope data
@@ -68,7 +71,7 @@ class Wizard():
             'y-axis':           [row[3]     for row in collection if row[0] == Constants.sensor_type_gyroscope],
             'z-axis':           [row[4]     for row in collection if row[0] == Constants.sensor_type_gyroscope],
             'timestamp':        [row[5]     for row in collection if row[0] == Constants.sensor_type_gyroscope],
-            'phone-position':   [position   for row in collection if row[0] == Constants.sensor_type_gyroscope],
+            'phone-position':   [position   for row in collection if row[0] == Constants.sensor_type_gyroscope]
         }
 
         # Compress data

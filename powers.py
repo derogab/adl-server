@@ -10,6 +10,11 @@ from keras.utils import np_utils
 from keras.models import load_model, Sequential
 from keras.layers import Dense, Flatten, Reshape
 
+# Set some standard parameters upfront
+pd.options.display.float_format = '{:.1f}'.format
+# Surpress warning for some operation
+pd.options.mode.chained_assignment = None  # default='warn'
+
 class Power:
 
     ### Init ###
@@ -18,7 +23,7 @@ class Power:
     
     ### Useful functions ###
     
-    # activity num
+    # Function to get the activity num
     def __num_activity(self):
         
         total_activity_num = 0
@@ -30,6 +35,20 @@ class Power:
             total_activity_num = len(data['activities'])
 
         return total_activity_num
+
+    # Function to get the phone positions num
+    def __num_phone_position(self):
+
+        positions = [
+            'left_hand', 
+            'right_hand', 
+            'front_left_pocket', 
+            'back_left_pocket', 
+            'front_right_pocket', 
+            'back_right_pocket'
+        ]
+
+        return len(positions)
     
     # Function to convert a value to float
     def __convert_to_float(self, x):
@@ -129,12 +148,40 @@ class Power:
 
         return reshaped_segments, labels
 
+    def __split_dataframe(self, df):
+        
+        # Get archives num
+        archives_num = df['user-id-encoded'].nunique()
+        
+        # Calculate the point where to divide
+        division_point = archives_num / 3 # 1/3 to test, 2/3 to train 
+
+        # Differentiate between test set and training set
+        df_train = df[df['user-id-encoded'] > division_point]
+        df_test = df[df['user-id-encoded'] <= division_point]
+
+        return df_train, df_test
+
+    # Function to prepare the dataframe
+    # Normalize and round the data 
+    def __prepare_dataframe(self, df):
+
+        # Normalize features for data set (values between 0 and 1)
+        df['x-axis'] = df['x-axis'] / df['x-axis'].max()
+        df['y-axis'] = df['y-axis'] / df['y-axis'].max()
+        df['z-axis'] = df['z-axis'] / df['z-axis'].max()
+        df['timestamp'] = df['timestamp'] / df['timestamp'].max()
+        df['phone-position'] = df['phone-position'] / self.__num_phone_position()
+
+        # Round numbers
+        df = df.round({'x-axis': 4, 'y-axis': 4, 'z-axis': 4, 'timestamp': 4, 'phone-position': 4})
+
+        return df      
+
 
     ### Main method ###
     def __teach_using(self, dataset_file, model_file):
 
-        # Set some standard parameters upfront
-        pd.options.display.float_format = '{:.1f}'.format
         # The number of steps within one time segment
         TIME_PERIODS = Constants.ml_time_periods
         # The steps to take from one segment to the next; if this value is equal to
@@ -155,27 +202,11 @@ class Power:
         df['phone-position'] = [self.__convert_to_float(x) for x in df['phone-position'].to_numpy()]
         df['activity'] = [self.__convert_to_float(x) for x in df['activity'].to_numpy()]
 
-        # Get archives num
-        archives_num = df['user-id-encoded'].nunique()
-        
-        # Calculate the point where to divide
-        division_point = archives_num / 3 # 1/3 to test, 2/3 to train 
+        # Split the dataframe
+        df_train, df_test = self.__split_dataframe(df)
 
-        # Differentiate between test set and training set
-        df_train = df[df['user-id-encoded'] > division_point]
-        df_test = df[df['user-id-encoded'] <= division_point]
-
-        # Normalize features for training data set (values between 0 and 1)
-        # Surpress warning for next 3 operation
-        pd.options.mode.chained_assignment = None  # default='warn'
-        df_train['x-axis'] = df_train['x-axis'] / df_train['x-axis'].max()
-        df_train['y-axis'] = df_train['y-axis'] / df_train['y-axis'].max()
-        df_train['z-axis'] = df_train['z-axis'] / df_train['z-axis'].max()
-        df_train['timestamp'] = df_train['timestamp'] / df_train['timestamp'].max()
-        df_train['phone-position'] = df_train['phone-position'] / 6
-
-        # Round numbers
-        df_train = df_train.round({'x-axis': 4, 'y-axis': 4, 'z-axis': 4, 'timestamp': 4, 'phone-position': 4})
+        # Prepare dataframe for training data
+        df_train = self.__prepare_dataframe(df_train)
 
         # Create segments and labels
         x_train, y_train = self.__create_segments_and_labels(df_train, TIME_PERIODS, STEP_DISTANCE, 'activity')
@@ -208,6 +239,8 @@ class Power:
         model_m.add(Dense(100, activation='relu'))
         model_m.add(Dense(100, activation='relu'))
         model_m.add(Dense(100, activation='relu'))
+        model_m.add(Dense(100, activation='relu'))
+        model_m.add(Dense(100, activation='relu'))
         model_m.add(Flatten())
         model_m.add(Dense(num_classes, activation='softmax'))
 
@@ -216,7 +249,7 @@ class Power:
             keras.callbacks.ModelCheckpoint(
                 filepath=Constants.tmp_path+'best_model.{epoch:02d}-{val_loss:.2f}.h5',
                 monitor='val_loss', save_best_only=True),
-            keras.callbacks.EarlyStopping(monitor='accuracy', patience=1)
+            keras.callbacks.EarlyStopping(monitor='accuracy', patience=3)
         ]
 
         # Model compile
@@ -250,34 +283,37 @@ class Power:
 
     def teach(self):
         self.__teach_using(Constants.datasets_path + Constants.sensor_type_accelerometer + '.csv', Constants.models_path + Constants.sensor_type_accelerometer + '.h5')
-        #self.__teach_using(Constants.datasets_path + Constants.sensor_type_gyroscope + '.csv', Constants.models_path + Constants.sensor_type_gyroscope + '.h5')
+        self.__teach_using(Constants.datasets_path + Constants.sensor_type_gyroscope + '.csv', Constants.models_path + Constants.sensor_type_gyroscope + '.h5')
 
-    # Program to find most frequent  
+    # Function to find most frequent  
     # element in a list 
     def __most_frequent(self, my_list):
-        return np.bincount(my_list).argmax()
+        
+        response = np.bincount(my_list).argmax()
+        counter = 0
 
+        # count element
+        for element in my_list:
+            if element == response:
+                counter = counter + 1
+        # accuracy % 
+        # conter : accuracy = len(my_list) : 100
+        accuracy = (counter * 100) / len(my_list)
+        
+        return response, accuracy
+
+    # Function to predict 
+    # using a pretrained model and a set of live data
     def __predict_using(self, df, model_file):
 
-        # Set some standard parameters upfront
-        pd.options.display.float_format = '{:.1f}'.format
         # The number of steps within one time segment
         TIME_PERIODS = Constants.ml_time_periods
         # The steps to take from one segment to the next; if this value is equal to
         # TIME_PERIODS, then there is no overlap between the segments
         STEP_DISTANCE = Constants.ml_step_distance
 
-        # Normalize features for training data set (values between 0 and 1)
-        # Surpress warning for next 3 operation
-        pd.options.mode.chained_assignment = None  # default='warn'
-        df['x-axis']    = df['x-axis'] / df['x-axis'].max()
-        df['y-axis']    = df['y-axis'] / df['y-axis'].max()
-        df['z-axis']    = df['z-axis'] / df['z-axis'].max()
-        df['timestamp'] = df['timestamp'] / df['timestamp'].max()
-        df['phone-position'] = df['phone-position'] / 6
-
-        # Round numbers
-        df = df.round({'x-axis': 4, 'y-axis': 4, 'z-axis': 4, 'timestamp': 4, 'phone-position': 4})
+        # Prepare dataframe for training data
+        df = self.__prepare_dataframe(df)
 
         # Create segments
         x_pred = self.__create_segments(df, TIME_PERIODS, STEP_DISTANCE)
@@ -304,42 +340,67 @@ class Power:
         # evaluate loaded model on test data
         loaded_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-        # Check Against Test Data
-        y_pred_test = loaded_model.predict(x_pred)
-
-        # Take the class with the highest probability from the test predictions
-        max_y_pred_test = np.argmax(y_pred_test, axis=1)
-
-        # Take more frequent result
-        prediction = self.__most_frequent(max_y_pred_test)
-
-        # Calculate accuracy
+        # Init return value
+        prediction = None
         accuracy = None
 
-        # Result
-        print('[RESULT] Prediction', prediction)
+        # Check Against Test Data
+        predicted = False
+        try:
+            y_pred_test = loaded_model.predict(x_pred)
+            predicted = True
+        except:
+            print('[Warning] Still little data to predict...')
 
+        # Check results
+        if predicted:
+
+            # Take the class with the highest probability from the test predictions
+            prediction_results = False
+            try:
+                max_y_pred_test = np.argmax(y_pred_test, axis=1)
+                prediction_results = True
+            except:
+                print('[Warning] Still little data to get results...')
+            
+            if prediction_results:
+
+                print(max_y_pred_test)
+
+                # Get prediction result and accuracy
+                prediction, accuracy = self.__most_frequent(max_y_pred_test)
+
+        # Return results
         return prediction, accuracy
 
     def predict(self, data):
 
         # Uncompress data
         data_acc    = data[Constants.sensor_type_accelerometer]
-        #data_gyro   = data[Constants.sensor_type_gyroscope]
+        data_gyro   = data[Constants.sensor_type_gyroscope]
 
         # Create dataframes from lists
         df_acc  = pd.DataFrame(data=data_acc)
-        #df_gyro = pd.DataFrame(data=data_gyro)
+        df_gyro = pd.DataFrame(data=data_gyro)
 
         # Predictions
         prediction_acc, accuracy_acc = self.__predict_using(df_acc, Constants.models_path + Constants.sensor_type_accelerometer + '.h5')
-        #prediction_gyro, accuracy_gyro = self.__predict_using(df_gyro, Constants.models_path + Constants.sensor_type_gyroscope + '.h5')
+        prediction_gyro, accuracy_gyro = self.__predict_using(df_gyro, Constants.models_path + Constants.sensor_type_gyroscope + '.h5')
 
-        # Select best prediction
-        
+        # Result
+        print('[RESULT] Prediction ACC', prediction_acc, ' ', accuracy_acc, '%')
+        print('[RESULT] Prediction GYRO', prediction_gyro, ' ', accuracy_gyro, '%')
 
-        prediction = prediction_acc
-        accuracy = accuracy_acc
-
+        if accuracy_gyro and not accuracy_acc:
+            prediction = prediction_gyro
+            accuracy = accuracy_gyro
+        elif accuracy_acc:
+            # main prediction input
+            prediction = prediction_acc
+            accuracy = accuracy_acc
+        else:
+            # no prediction
+            prediction = None
+            accuracy = 0
 
         return prediction, accuracy
