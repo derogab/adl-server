@@ -75,7 +75,7 @@ class Power:
     # Function to read a csv file
     def __read_data(self, file_path):
 
-        column_names = ['user-id',
+        column_names = ['archive',
                         'index',
                         'x-axis',
                         'y-axis',
@@ -166,14 +166,14 @@ class Power:
     def __split_dataframe(self, df):
         
         # Get archives num
-        archives_num = df['user-id-encoded'].nunique()
+        archives_num = df['archive-encoded'].nunique()
         
         # Calculate the point where to divide
         division_point = archives_num / 3 # 1/3 to test, 2/3 to train 
 
         # Differentiate between test set and training set
-        df_train = df[df['user-id-encoded'] > division_point]
-        df_test = df[df['user-id-encoded'] <= division_point]
+        df_train = df[df['archive-encoded'] > division_point]
+        df_test = df[df['archive-encoded'] <= division_point]
 
         return df_train, df_test
 
@@ -259,17 +259,19 @@ class Power:
     def __timestamp_to_distance(self, df):
 
         frames = []
-
-        for group in df.groupby(by=['user-id-encoded']):
+        # For each group, grouped by distinct archive-encoded
+        for group in df.groupby(by=['archive-encoded']):
             
+            # Get
             index, df_group = group
-
+            # Transform timestamp to distance
             df_group = self.__timestamp_to_distance_helper(df_group)
-
+            # Set
             group = index, df_group
-            
+            # Associate the edited groups
             frames.append(df_group)
         
+        # Concat the associated groups
         df = pd.concat(frames, axis=0, ignore_index=False)
 
         return df
@@ -296,7 +298,7 @@ class Power:
             pass
 
         # Transform non numeric column in numeric
-        df['user-id-encoded'] = preprocessing.LabelEncoder().fit_transform(df['user-id'].values.ravel())
+        df['archive-encoded'] = preprocessing.LabelEncoder().fit_transform(df['archive'].values.ravel())
 
         # Convert in float
         df['phone-position'] = [self.__convert_to_float(x) for x in df['phone-position'].to_numpy()]
