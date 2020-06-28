@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 from sklearn import metrics, preprocessing
+from sklearn.metrics import classification_report
 import keras
 from keras.utils import np_utils
 from keras.models import load_model, Sequential
@@ -18,7 +19,6 @@ if debug:
     from matplotlib import pyplot as plt
     import seaborn as sns
     from IPython.display import display, HTML
-    from sklearn.metrics import classification_report
     from keras.layers import Conv2D, MaxPooling2D
     from scipy import stats
 
@@ -155,7 +155,7 @@ class Power:
                 # Retrieve the most often used label in this segment
                 label = stats.mode(df[label_name][i: i + time_steps])[0][0]
                 # and then
-                labels.append(label)   
+                labels.append(label)
 
         # Bring the segments into a better shape
         reshaped_segments = np.asarray(segments, dtype= np.float32).reshape(-1, time_steps, N_FEATURES)
@@ -213,6 +213,21 @@ class Power:
         ax.set_xlim([min(x), max(x)])
         ax.grid(True)
 
+    def __show_confusion_matrix(self, validations, predictions):
+
+        matrix = metrics.confusion_matrix(validations, predictions)
+        plt.figure(figsize=(6, 4))
+        sns.heatmap(matrix,
+                    cmap='coolwarm',
+                    linecolor='white',
+                    linewidths=1,
+                    annot=True,
+                    fmt='d')
+        plt.title('Confusion Matrix')
+        plt.ylabel('True Label')
+        plt.xlabel('Predicted Label')
+        plt.show()
+
     def __show_dataset_graphs(self, df):
 
         # Show how many data for each activity
@@ -222,6 +237,42 @@ class Power:
         for activity in np.unique(df['activity']):
             subset = df[df['activity'] == activity][:180]
             self.__plot_activity(activity, subset)
+
+    def __timestamp_to_distance_helper(self, df):
+
+        relatives = []
+        min_timestamp = df['timestamp'].min()
+        for time in df['timestamp']:
+            relatives.append(np.subtract(time, min_timestamp))
+
+        distances = []
+        previous_time = 0
+        for time in relatives:
+            distances.append(np.subtract(time, previous_time))
+            previous_time = time
+
+        df['timestamp'] = distances
+
+        return df
+
+
+    def __timestamp_to_distance(self, df):
+
+        frames = []
+
+        for group in df.groupby(by=['user-id-encoded']):
+            
+            index, df_group = group
+
+            df_group = self.__timestamp_to_distance_helper(df_group)
+
+            group = index, df_group
+            
+            frames.append(df_group)
+        
+        df = pd.concat(frames, axis=0, ignore_index=False)
+
+        return df
 
     ### Main method ###
     def __teach_using(self, dataset_file, model_file):
@@ -253,6 +304,9 @@ class Power:
 
         # Split the dataframe
         df_train, df_test = self.__split_dataframe(df)
+
+        # Convert timestamp to distance
+        df_train = self.__timestamp_to_distance(df_train)        
 
         # Prepare dataframe for training data
         df_train = self.__prepare_dataframe(df_train)
@@ -306,6 +360,7 @@ class Power:
                         optimizer='adam', metrics=['accuracy'])
 
         # Train
+        trained = False
         try:
             
             # Fit the model
@@ -326,8 +381,67 @@ class Power:
             print("[INFO] serializing network to '{}'...".format(model_file))
             model_m.save(model_file, overwrite=True)
 
+            # check successfull train
+            trained = True                    
+
         except:
             print('[Warning] Still little data to learn...')
+
+
+        if trained:
+            
+            # Convert timestamp to distance
+            df_test = self.__timestamp_to_distance(df_test)
+
+            # Prepare dataframe for testing data
+            df_test = self.__prepare_dataframe(df_test)
+
+            # Create segments and labels
+            x_test, y_test = self.__create_segments_and_labels(df_test, TIME_PERIODS, STEP_DISTANCE, 'activity')
+
+            # Set input & output dimensions
+            num_time_periods, num_sensors = x_test.shape[1], x_test.shape[2]
+            num_classes = self.__num_activity()
+
+            # compress two-dimensional data in one-dimensional data
+            input_shape = (num_time_periods*num_sensors)
+            x_test = x_test.reshape(x_test.shape[0], input_shape)
+
+            # convert data to float: keras want float data
+            x_test = x_test.astype('float32')
+            y_test = y_test.astype('float32')
+
+            # https://www.tensorflow.org/api_docs/python/tf/keras/utils/to_categorical
+            y_test_hot = np_utils.to_categorical(y_test, num_classes)
+
+            # Predict using test data
+            y_pred_test = model_m.predict(x_test)
+
+            # Take the class with the highest probability from the test predictions
+            max_y_pred_test = np.argmax(y_pred_test, axis=1)
+            max_y_test = np.argmax(y_test_hot, axis=1)
+
+            # Show classification report
+            print(classification_report(max_y_test, max_y_pred_test))
+
+            # Show after-train graphs in debug mode
+            if debug:
+
+                # show accuracy and loss graph
+                plt.figure(figsize=(6, 4))
+                plt.plot(history.history['accuracy'], 'r', label='Accuracy of training data')
+                plt.plot(history.history['val_accuracy'], 'b', label='Accuracy of validation data')
+                plt.plot(history.history['loss'], 'r--', label='Loss of training data')
+                plt.plot(history.history['val_loss'], 'b--', label='Loss of validation data')
+                plt.title('Model Accuracy and Loss')
+                plt.ylabel('Accuracy and Loss')
+                plt.xlabel('Training Epoch')
+                plt.ylim(0)
+                plt.legend()
+                plt.show()
+
+                # show confusion matrix
+                self.__show_confusion_matrix(max_y_test, max_y_pred_test)
 
 
     def teach(self):
@@ -384,40 +498,44 @@ class Power:
         keras.backend.tensorflow_backend._SYMBOLIC_SCOPE.value = True
 
         # load json and create model
-        loaded_model = load_model(model_file)
-
-        # evaluate loaded model on test data
-        loaded_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+        loaded = False
+        try:
+            loaded_model = load_model(model_file)
+            loaded = True
+        except:
+            print('[Error] Model load failed.')
 
         # Init return value
         prediction = None
         accuracy = None
 
-        # Check Against Test Data
-        predicted = False
-        try:
-            y_pred_test = loaded_model.predict(x_pred)
-            predicted = True
-        except:
-            print('[Warning] Still little data to predict...')
+        if loaded:
+        
+            # evaluate loaded model on test data
+            loaded_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-        # Check results
-        if predicted:
-
-            # Take the class with the highest probability from the test predictions
-            prediction_results = False
+            # Check Against Test Data
+            predicted = False
             try:
-                max_y_pred_test = np.argmax(y_pred_test, axis=1)
-                prediction_results = True
+                y_pred_test = loaded_model.predict(x_pred)
+                predicted = True
             except:
-                print('[Warning] Still little data to get results...')
-            
-            if prediction_results:
+                print('[Warning] Still little data to predict...')
 
-                print(max_y_pred_test)
+            # Check results
+            if predicted:
 
-                # Get prediction result and accuracy
-                prediction, accuracy = self.__most_frequent(max_y_pred_test)
+                # Take the class with the highest probability from the test predictions
+                prediction_results = False
+                try:
+                    max_y_pred_test = np.argmax(y_pred_test, axis=1)
+                    prediction_results = True
+                except:
+                    print('[Warning] Still little data to get results...')
+                
+                if prediction_results:
+                    # Get prediction result and accuracy
+                    prediction, accuracy = self.__most_frequent(max_y_pred_test)
 
         # Return results
         return prediction, accuracy
@@ -432,14 +550,19 @@ class Power:
         df_acc  = pd.DataFrame(data=data_acc)
         df_gyro = pd.DataFrame(data=data_gyro)
 
-        # Predictions
-        prediction_acc, accuracy_acc = self.__predict_using(df_acc, Constants.models_path + Constants.sensor_type_accelerometer + '.h5')
-        prediction_gyro, accuracy_gyro = self.__predict_using(df_gyro, Constants.models_path + Constants.sensor_type_gyroscope + '.h5')
+        # Convert timestamp to distance
+        df_acc  = self.__timestamp_to_distance_helper(df_acc)
+        df_gyro = self.__timestamp_to_distance_helper(df_gyro)
 
-        # Result
+        # Predictions
+        prediction_acc, accuracy_acc    = self.__predict_using(df_acc, Constants.models_path + Constants.sensor_type_accelerometer + '.h5')
+        prediction_gyro, accuracy_gyro  = self.__predict_using(df_gyro, Constants.models_path + Constants.sensor_type_gyroscope + '.h5')
+
+        # Results
         print('[RESULT] Prediction ACC', prediction_acc, ' ', accuracy_acc, '%')
         print('[RESULT] Prediction GYRO', prediction_gyro, ' ', accuracy_gyro, '%')
 
+        # Select result
         if accuracy_gyro and not accuracy_acc:
             prediction = prediction_gyro
             accuracy = accuracy_gyro
@@ -452,4 +575,5 @@ class Power:
             prediction = None
             accuracy = 0
 
+        # and then return
         return prediction, accuracy
