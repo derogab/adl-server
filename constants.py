@@ -8,6 +8,8 @@ class Constants:
     # Server
     server_host = ""
     server_port = 3000
+    # API
+    api_path = "https://api.adl.derogab.com"
     # Connection
     connection_max_timeout = 9999999
     something_value = 200

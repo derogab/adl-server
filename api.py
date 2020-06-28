@@ -13,7 +13,7 @@ class API:
         if self.activities is None:
             # Download activities
             activities = []
-            with urllib.request.urlopen("https://api.adl.derogab.com/activities") as url:
+            with urllib.request.urlopen(Constants.api_path + "/activities") as url:
                 data = json.loads(url.read().decode())
                 # Get activities
                 activities = data['activities']
