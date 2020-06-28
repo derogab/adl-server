@@ -37,17 +37,50 @@ class Power:
         pass
     
     ### Useful functions ###
-    
-    # Function to get the activity num
-    def __num_activity(self):
-        
-        total_activity_num = 0
+
+    # Function to get activity informations
+    def __get_activities(self):
+
+        activities = []
         with urllib.request.urlopen("https://api.adl.derogab.com/activities") as url:
             data = json.loads(url.read().decode())
             # get activities
             activities = data['activities']
-            # get num of all activities
-            total_activity_num = len(data['activities'])
+
+        return activities
+
+    # Function to get activities labels
+    def __get_activities_labels(self):
+
+        # Create labels
+        labels = []
+        # Get labels
+        for item in self.__get_activities():
+            labels.append(item['activity'])
+
+        return labels
+
+    # Function to get activity name by id
+    def __get_activity_by_id(self, aid):
+        
+        # get activities
+        activities = self.__get_activities()
+        # search by id
+        activity = aid
+        for item in activities:
+            if item['id'] == aid:
+                activity = item['activity']
+
+        return activity
+    
+    # Function to get the activity num
+    def __num_of_activities(self):
+        
+        total_activity_num = 0
+        # get activities
+        activities = self.__get_activities()
+        # get num of all activities
+        total_activity_num = len(activities)
 
         return total_activity_num
 
@@ -200,6 +233,9 @@ class Power:
         self.__plot_axis(ax1, data['timestamp'], data['y-axis'], 'Y-Axis')
         self.__plot_axis(ax2, data['timestamp'], data['z-axis'], 'Z-Axis')
         plt.subplots_adjust(hspace=0.2)
+
+        activity = self.__get_activity_by_id(activity)
+
         fig.suptitle(activity)
         plt.subplots_adjust(top=0.90)
         plt.show()
@@ -215,12 +251,16 @@ class Power:
 
     def __show_confusion_matrix(self, validations, predictions):
 
+        LABELS = self.__get_activities_labels()
+
         matrix = metrics.confusion_matrix(validations, predictions)
         plt.figure(figsize=(6, 4))
         sns.heatmap(matrix,
                     cmap='coolwarm',
                     linecolor='white',
                     linewidths=1,
+                    xticklabels=LABELS,
+                    yticklabels=LABELS,
                     annot=True,
                     fmt='d')
         plt.title('Confusion Matrix')
@@ -230,12 +270,21 @@ class Power:
 
     def __show_dataset_graphs(self, df):
 
+        # get activities
+        activities = self.__get_activities()
+
+        # Dataframe to show
+        df_plt = df.copy()
+        
+        # Replace activity id with name
+        df_plt['activity'] = [item['activity'] for aid in df_plt['activity'] for item in activities if item['id'] == aid]
+
         # Show how many data for each activity
-        df['activity'].value_counts().plot(kind='bar', title='Data by Activity Type')
+        df_plt['activity'].value_counts().plot(kind='bar', title='Data by Activity Type')
         plt.show()
 
-        for activity in np.unique(df['activity']):
-            subset = df[df['activity'] == activity][:180]
+        for activity in np.unique(df_plt['activity']):
+            subset = df_plt[df_plt['activity'] == activity][:180]
             self.__plot_activity(activity, subset)
 
     def __timestamp_to_distance_helper(self, df):
@@ -318,7 +367,7 @@ class Power:
 
         # Set input & output dimensions
         num_time_periods, num_sensors = x_train.shape[1], x_train.shape[2]
-        num_classes = self.__num_activity()
+        num_classes = self.__num_of_activities()
 
         # compress two-dimensional data in one-dimensional data
         input_shape = (num_time_periods*num_sensors)
@@ -403,7 +452,7 @@ class Power:
 
             # Set input & output dimensions
             num_time_periods, num_sensors = x_test.shape[1], x_test.shape[2]
-            num_classes = self.__num_activity()
+            num_classes = self.__num_of_activities()
 
             # compress two-dimensional data in one-dimensional data
             input_shape = (num_time_periods*num_sensors)
@@ -485,7 +534,7 @@ class Power:
 
         # Set input & output dimensions
         num_time_periods, num_sensors = x_pred.shape[1], x_pred.shape[2]
-        num_classes = self.__num_activity()
+        num_classes = self.__num_of_activities()
 
         # compress two-dimensional data in one-dimensional data
         input_shape = (num_time_periods*num_sensors)
