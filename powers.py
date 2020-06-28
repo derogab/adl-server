@@ -1,6 +1,6 @@
 from constants import Constants
+from api import API
 import h5py
-import urllib.request, json 
 import numpy as np
 import pandas as pd
 from scipy import stats
@@ -34,20 +34,14 @@ class Power:
 
     ### Init ###
     def __init__(self):
+        self.api = API()
         pass
     
     ### Useful functions ###
 
     # Function to get activity informations
     def __get_activities(self):
-
-        activities = []
-        with urllib.request.urlopen("https://api.adl.derogab.com/activities") as url:
-            data = json.loads(url.read().decode())
-            # get activities
-            activities = data['activities']
-
-        return activities
+        return self.api.get_activities()
 
     # Function to get activities labels
     def __get_activities_labels(self):
@@ -277,7 +271,7 @@ class Power:
         df_plt = df.copy()
         
         # Replace activity id with name
-        df_plt['activity'] = [item['activity'] for aid in df_plt['activity'] for item in activities if item['id'] == aid]
+        df_plt['activity'] = [self.__get_activity_by_id(aid) for aid in df_plt['activity']]
 
         # Show how many data for each activity
         df_plt['activity'].value_counts().plot(kind='bar', title='Data by Activity Type')
