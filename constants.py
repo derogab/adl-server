@@ -30,3 +30,5 @@ class Constants:
     datasets_path = "/datasets/"
     models_path = "/models/"
     tmp_path = "/tmp/"
+    # Debug mode
+    debug = False

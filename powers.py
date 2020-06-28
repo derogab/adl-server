@@ -11,8 +11,8 @@ from keras.utils import np_utils
 from keras.models import load_model, Sequential
 from keras.layers import Dense, Flatten, Reshape
 
-# Active debug mode
-debug = False
+# Debug mode
+debug = Constants.debug
 
 if debug:
     
