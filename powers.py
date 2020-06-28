@@ -424,7 +424,7 @@ class Power:
             max_y_test = np.argmax(y_test_hot, axis=1)
 
             # Show classification report
-            print(classification_report(max_y_test, max_y_pred_test))
+            print(classification_report(max_y_test, max_y_pred_test, zero_division=0))
 
             # Show after-train graphs in debug mode
             if debug:
