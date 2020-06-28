@@ -599,26 +599,18 @@ class Power:
         df_acc  = self.__timestamp_to_distance_helper(df_acc)
         df_gyro = self.__timestamp_to_distance_helper(df_gyro)
 
+        # Init return values
+        prediction, accuracy = None, 0
         # Predictions
-        prediction_acc, accuracy_acc    = self.__predict_using(df_acc, Constants.models_path + Constants.sensor_type_accelerometer + '.h5')
-        prediction_gyro, accuracy_gyro  = self.__predict_using(df_gyro, Constants.models_path + Constants.sensor_type_gyroscope + '.h5')
+        # Secondary prediction
+        if len(df_gyro) >= Constants.ml_time_periods:
+            prediction, accuracy = self.__predict_using(df_gyro, Constants.models_path + Constants.sensor_type_gyroscope + '.h5')
+        # Main prediction
+        if len(df_acc) >= Constants.ml_time_periods:
+            prediction, accuracy = self.__predict_using(df_acc, Constants.models_path + Constants.sensor_type_accelerometer + '.h5')
 
         # Results
-        print('[RESULT] Prediction ACC', prediction_acc, ' ', accuracy_acc, '%')
-        print('[RESULT] Prediction GYRO', prediction_gyro, ' ', accuracy_gyro, '%')
-
-        # Select result
-        if accuracy_gyro and not accuracy_acc:
-            prediction = prediction_gyro
-            accuracy = accuracy_gyro
-        elif accuracy_acc:
-            # main prediction input
-            prediction = prediction_acc
-            accuracy = accuracy_acc
-        else:
-            # no prediction
-            prediction = None
-            accuracy = 0
+        print('[RESULT] Prediction', prediction, ' ', accuracy, '%')
 
         # and then return
         return prediction, accuracy
