@@ -385,7 +385,7 @@ class Power:
             keras.callbacks.ModelCheckpoint(
                 filepath=Constants.tmp_path+'best_model.{epoch:02d}-{val_loss:.2f}.h5',
                 monitor='val_loss', save_best_only=True),
-            keras.callbacks.EarlyStopping(monitor='accuracy', patience=3)
+            keras.callbacks.EarlyStopping(monitor='accuracy', patience=1)
         ]
 
         # Model compile
