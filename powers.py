@@ -9,7 +9,7 @@ from sklearn.metrics import classification_report
 import keras
 from keras.utils import np_utils
 from keras.models import load_model, Sequential
-from keras.layers import Dense, Flatten, Reshape
+from keras.layers import Dense, Flatten
 
 # Debug mode
 debug = Constants.debug
@@ -363,10 +363,6 @@ class Power:
         num_time_periods, num_sensors = x_train.shape[1], x_train.shape[2]
         num_classes = self.__num_of_activities()
 
-        # compress two-dimensional data in one-dimensional data
-        input_shape = (num_time_periods*num_sensors)
-        x_train = x_train.reshape(x_train.shape[0], input_shape)
-
         # convert data to float: keras want float data
         x_train = x_train.astype('float32')
         y_train = y_train.astype('float32')
@@ -380,10 +376,7 @@ class Power:
         # To fix a Keras bug with last version of tensorflow
         # https://github.com/keras-team/keras/issues/13353#issuecomment-545459472
         keras.backend.tensorflow_backend._SYMBOLIC_SCOPE.value = True
-        # Remark: since coreml cannot accept vector shapes of complex shape like
-        # [TIME_PERIODS, __num_features()] this workaround is used in order to reshape the vector internally
-        # prior feeding it into the network
-        model_m.add(Reshape((TIME_PERIODS, self.__num_features()), input_shape=(input_shape,)))
+        # Set layers
         model_m.add(Dense(100, activation='relu'))
         model_m.add(Dense(100, activation='relu'))
         model_m.add(Dense(100, activation='relu'))
@@ -447,10 +440,6 @@ class Power:
             # Set input & output dimensions
             num_time_periods, num_sensors = x_test.shape[1], x_test.shape[2]
             num_classes = self.__num_of_activities()
-
-            # compress two-dimensional data in one-dimensional data
-            input_shape = (num_time_periods*num_sensors)
-            x_test = x_test.reshape(x_test.shape[0], input_shape)
 
             # convert data to float: keras want float data
             x_test = x_test.astype('float32')
@@ -529,10 +518,6 @@ class Power:
         # Set input & output dimensions
         num_time_periods, num_sensors = x_pred.shape[1], x_pred.shape[2]
         num_classes = self.__num_of_activities()
-
-        # compress two-dimensional data in one-dimensional data
-        input_shape = (num_time_periods*num_sensors)
-        x_pred = x_pred.reshape(x_pred.shape[0], input_shape)
 
         # convert data to float: keras want float data
         x_pred = x_pred.astype('float32')
