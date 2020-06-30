@@ -196,7 +196,7 @@ class Power:
         archives_num = df['archive-encoded'].nunique()
         
         # Calculate the point where to divide
-        division_point = archives_num / 3 # 1/3 to test, 2/3 to train 
+        division_point = archives_num / 5 # 1/5 to test, 4/5 to train 
 
         # Differentiate between test set and training set
         df_train = df[df['archive-encoded'] > division_point]
