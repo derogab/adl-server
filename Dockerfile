@@ -7,7 +7,7 @@ WORKDIR /usr/src/app
 RUN mkdir /datasets /models
 
 # Install app dependencies
-RUN pip install tensorflow keras h5py pandas sklearn scipy numpy
+RUN pip install tensorflow h5py pandas sklearn scipy numpy
 
 # Copy app 
 COPY . .

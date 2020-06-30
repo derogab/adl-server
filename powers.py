@@ -6,10 +6,10 @@ import pandas as pd
 from scipy import stats
 from sklearn import metrics, preprocessing
 from sklearn.metrics import classification_report
-import keras
-from keras.utils import np_utils
-from keras.models import load_model, Sequential
-from keras.layers import Dense, Flatten
+from tensorflow import keras
+from tensorflow.keras import utils as np_utils
+from tensorflow.keras.models import load_model, Sequential
+from tensorflow.keras.layers import Dense, Flatten
 
 # Debug mode
 debug = Constants.debug
@@ -19,7 +19,6 @@ if debug:
     from matplotlib import pyplot as plt
     import seaborn as sns
     from IPython.display import display, HTML
-    from keras.layers import Conv2D, MaxPooling2D
     from scipy import stats
 
     sns.set() # Default seaborn look and feel
@@ -372,10 +371,6 @@ class Power:
 
         # machine learning
         model_m = Sequential()
-        # Ugly but functional workaround
-        # To fix a Keras bug with last version of tensorflow
-        # https://github.com/keras-team/keras/issues/13353#issuecomment-545459472
-        keras.backend.tensorflow_backend._SYMBOLIC_SCOPE.value = True
         # Set layers
         model_m.add(Dense(100, activation='relu'))
         model_m.add(Dense(100, activation='relu'))
@@ -521,11 +516,6 @@ class Power:
 
         # convert data to float: keras want float data
         x_pred = x_pred.astype('float32')
-
-        # Ugly but functional workaround
-        # To fix a Keras bug with last version of tensorflow
-        # https://github.com/keras-team/keras/issues/13353#issuecomment-545459472
-        keras.backend.tensorflow_backend._SYMBOLIC_SCOPE.value = True
 
         # load json and create model
         loaded = False
