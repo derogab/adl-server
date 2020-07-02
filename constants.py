@@ -35,6 +35,6 @@ class Constants:
     # No ID value
     no_id_value = -1
     # Debug mode
-    debug = True
+    debug = False
     # Debug graph axis num value
     debug_graph_quantity_values = 300
