@@ -14,9 +14,9 @@ class Constants:
     connection_max_timeout = 9999999
     something_value = 200
     # ML params
-    ml_time_periods = 200
-    ml_step_distance = 20
-    ml_batch_size = 100
+    ml_time_periods = 80
+    ml_step_distance = 40
+    ml_batch_size = 400
     ml_epoch = 50
     # Sensor type
     sensor_type_accelerometer = "accelerometer"
@@ -32,7 +32,9 @@ class Constants:
     datasets_path = "/datasets/"
     models_path = "/models/"
     tmp_path = "/tmp/"
-    # Debug mode
-    debug = False
     # No ID value
     no_id_value = -1
+    # Debug mode
+    debug = True
+    # Debug graph axis num value
+    debug_graph_quantity_values = 300

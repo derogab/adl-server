@@ -34,7 +34,6 @@ class Power:
     ### Init ###
     def __init__(self):
         self.api = API()
-        pass
     
     ### Useful functions ###
 
@@ -52,19 +51,6 @@ class Power:
             labels.append(item['activity'])
 
         return labels
-
-    # Function to get activity name by id
-    def __get_activity_by_id(self, aid):
-        
-        # get activities
-        activities = self.__get_activities()
-        # search by id
-        activity = aid
-        for item in activities:
-            if item['id'] == aid:
-                activity = item['activity']
-
-        return activity
     
     # Function to get the activity num
     def __num_of_activities(self):
@@ -80,7 +66,7 @@ class Power:
     # Function to get activity ID by name
     def __get_activity_id_by_name(self, name):
         
-        for item in self.api.get_activities():
+        for item in self.__get_activities():
             if item['activity'] == name:
                 return item['id']
 
@@ -89,7 +75,7 @@ class Power:
     # Function to get activity name by ID
     def __get_activity_name_by_id(self, aid):
         
-        for item in self.api.get_activities():
+        for item in self.__get_activities():
             if item['id'] == aid:
                 return item['activity']
 
@@ -226,7 +212,7 @@ class Power:
         self.__plot_axis(ax2, data['timestamp'], data['z-axis'], 'Z-Axis')
         plt.subplots_adjust(hspace=0.2)
 
-        activity = self.__get_activity_by_id(activity)
+        activity = self.__get_activity_name_by_id(activity)
 
         fig.suptitle(activity)
         plt.subplots_adjust(top=0.90)
@@ -260,7 +246,7 @@ class Power:
         plt.xlabel('Predicted Label')
         plt.show()
 
-    def __show_dataset_graphs(self, df):
+    def __show_dataset_graphs(self, position, df):
 
         # get activities
         activities = self.__get_activities()
@@ -269,15 +255,23 @@ class Power:
         df_plt = df.copy()
         
         # Replace activity id with name
-        df_plt['activity'] = [self.__get_activity_by_id(aid) for aid in df_plt['activity']]
+        df_plt['activity'] = df_plt['activity'].apply(self.__get_activity_name_by_id)
 
         # Show how many data for each activity
         df_plt['activity'].value_counts().plot(kind='bar', title='Data by Activity Type')
         plt.show()
 
         for activity in np.unique(df_plt['activity']):
-            subset = df_plt[df_plt['activity'] == activity][:180]
-            self.__plot_activity(activity, subset)
+            # Get only data of this activity
+            subset = df_plt[df_plt['activity'] == activity]
+
+            # Group by archives
+            grouped = subset.groupby(by=['archive'])
+            # Get last 
+            for group in grouped:
+                archive, df_plt_to_show = group
+            # Show graph
+            self.__plot_activity(activity + ' with device in ' + position, df_plt_to_show[:Constants.debug_graph_quantity_values])
 
     def __timestamp_to_distance_helper(self, df):
 
@@ -332,11 +326,6 @@ class Power:
 
         # Model file
         model_file = Constants.models_path + sensor + '_' + position + '.h5'
-
-        # show data
-        if debug:
-            self.__show_dataset_graphs(df)
-            pass
 
         # Transform non numeric column in numeric
         df['archive-encoded'] = preprocessing.LabelEncoder().fit_transform(df['archive'].values.ravel())
@@ -404,7 +393,7 @@ class Power:
                                 epochs=EPOCHS,
                                 callbacks=callbacks_list,
                                 validation_split=0.2,
-                                verbose=1)
+                                verbose=2)
 
             # evaluate the model
             scores = model_m.evaluate(x_train, y_train_hot, verbose=0)
@@ -493,6 +482,9 @@ class Power:
                 
                 # Get
                 position, df_group = group
+                # Show data
+                if debug:
+                    self.__show_dataset_graphs(position, df_group)
                 # Transform timestamp to distance
                 df_group = self.__timestamp_to_distance_helper(df_group)
                 # Train
