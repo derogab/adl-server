@@ -77,20 +77,6 @@ class Power:
 
         return total_activity_num
 
-    # Function to get the phone positions num
-    def __num_phone_position(self):
-
-        positions = [
-            'left_hand', 
-            'right_hand', 
-            'front_left_pocket', 
-            'back_left_pocket', 
-            'front_right_pocket', 
-            'back_right_pocket'
-        ]
-
-        return len(positions)
-
     # Function to get activity ID by name
     def __get_activity_id_by_name(self, name):
         
