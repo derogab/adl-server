@@ -90,6 +90,24 @@ class Power:
         ]
 
         return len(positions)
+
+    # Function to get activity ID by name
+    def __get_activity_id_by_name(self, name):
+        
+        for item in self.api.get_activities():
+            if item['activity'] == name:
+                return item['id']
+
+        return Constants.no_id_value
+
+    # Function to get activity name by ID
+    def __get_activity_name_by_id(self, aid):
+        
+        for item in self.api.get_activities():
+            if item['id'] == aid:
+                return item['activity']
+
+        return aid
     
     # Function to convert a value to float
     def __convert_to_float(self, x):
@@ -117,9 +135,6 @@ class Power:
         inplace=True,
         to_replace=r';',
         value=r'')
-        # ... and then (if last data is a float) this column must be transformed to float explicitly
-        # if it must be a float decomment following row
-        df['activity'] = df['activity'].apply(self.__convert_to_float)
         # This is very important otherwise the model will not fit and loss
         # will show up as NAN
         df.dropna(axis=0, how='any', inplace=True)
@@ -146,7 +161,7 @@ class Power:
 
     # num features
     def __num_features(self):
-        features = ['x', 'y', 'z', 't', 'p']
+        features = ['x', 'y', 'z', 't']
         return len(features)
 
     # Function to create segments
@@ -157,9 +172,9 @@ class Power:
     # Function to create segments and labels
     def __create_segments_and_labels(self, df, time_steps, step, label_name):
 
-        # features = x, y, z, t, p
-        # x, y, z acceleration, timestamp and phone position as features
-        N_FEATURES = 5
+        # features = x, y, z, t
+        # x, y, z, timestamp as features
+        N_FEATURES = self.__num_features()
         # Number of steps to advance in each iteration (for me, it should always
         # be equal to the time_steps in order to have no overlap between segments)
         # step = time_steps
@@ -171,10 +186,9 @@ class Power:
             ys = df['y-axis'].values[i: i + time_steps]
             zs = df['z-axis'].values[i: i + time_steps]
             ts = df['timestamp'].values[i: i + time_steps]
-            ps = df['phone-position'].values[i: i + time_steps]
             
             # Create segments
-            segments.append([xs, ys, zs, ts, ps])
+            segments.append([xs, ys, zs, ts])
 
             # Create labels
             if label_name:
@@ -208,14 +222,13 @@ class Power:
     def __prepare_dataframe(self, df):
 
         # Normalize features for data set (values between 0 and 1)
-        df['x-axis'] = df['x-axis'] / df['x-axis'].max()
-        df['y-axis'] = df['y-axis'] / df['y-axis'].max()
-        df['z-axis'] = df['z-axis'] / df['z-axis'].max()
-        df['timestamp'] = df['timestamp'] / df['timestamp'].max()
-        df['phone-position'] = df['phone-position'] / self.__num_phone_position()
+        df['x-axis']    = df['x-axis']      / df['x-axis'].max()
+        df['y-axis']    = df['y-axis']      / df['y-axis'].max()
+        df['z-axis']    = df['z-axis']      / df['z-axis'].max()
+        df['timestamp'] = df['timestamp']   / df['timestamp'].max()        
 
         # Round numbers
-        df = df.round({'x-axis': 4, 'y-axis': 4, 'z-axis': 4, 'timestamp': 4, 'phone-position': 4})
+        df = df.round({'x-axis': 4, 'y-axis': 4, 'z-axis': 4, 'timestamp': 4})
 
         return df
 
@@ -305,11 +318,11 @@ class Power:
         for group in df.groupby(by=['archive-encoded']):
             
             # Get
-            index, df_group = group
+            archive, df_group = group
             # Transform timestamp to distance
             df_group = self.__timestamp_to_distance_helper(df_group)
             # Set
-            group = index, df_group
+            group = archive, df_group
             # Associate the edited groups
             frames.append(df_group)
         
@@ -319,7 +332,7 @@ class Power:
         return df
 
     ### Main method ###
-    def __teach_using(self, dataset_file, model_file):
+    def __teach_using(self, df, model_file):
 
         # The number of steps within one time segment
         TIME_PERIODS = Constants.ml_time_periods
@@ -331,9 +344,6 @@ class Power:
         BATCH_SIZE = Constants.ml_batch_size # https://stats.stackexchange.com/questions/153531/what-is-batch-size-in-neural-network
         EPOCHS = Constants.ml_epoch
 
-        # Load data set containing all the data from csv
-        df = self.__read_data(dataset_file)
-
         # show data
         if debug:
             self.__show_dataset_graphs(df)
@@ -342,9 +352,10 @@ class Power:
         # Transform non numeric column in numeric
         df['archive-encoded'] = preprocessing.LabelEncoder().fit_transform(df['archive'].values.ravel())
 
-        # Convert in float
-        df['phone-position'] = [self.__convert_to_float(x) for x in df['phone-position'].to_numpy()]
-        df['activity'] = [self.__convert_to_float(x) for x in df['activity'].to_numpy()]
+        # Transform activity name in numerical (id)
+        df['activity'] = df['activity'].apply(self.__get_activity_id_by_name)
+        # and then convert to float
+        df['activity'] = df['activity'].apply(self.__convert_to_float)
 
         # Split the dataframe
         df_train, df_test = self.__split_dataframe(df)
@@ -474,10 +485,31 @@ class Power:
 
 
     def teach(self):
-        self.__teach_using(Constants.datasets_path + Constants.sensor_type_accelerometer + '.csv', Constants.models_path + Constants.sensor_type_accelerometer + '.h5')
-        self.__teach_using(Constants.datasets_path + Constants.sensor_type_gyroscope + '.csv', Constants.models_path + Constants.sensor_type_gyroscope + '.h5')
 
-    # Function to find most frequent  
+        sensors = [
+            Constants.sensor_type_accelerometer,
+            Constants.sensor_type_gyroscope
+        ]
+        
+        for sensor in sensors:
+            
+            # Get dataset path
+            dataset_file = Constants.datasets_path + sensor + '.csv'
+
+            # Load data set containing all the data from csv
+            df = self.__read_data(dataset_file)
+
+            # For each phone-position, grouped by distinct phone-position
+            for group in df.groupby(by=['phone-position']):
+                
+                # Get
+                position, df_group = group
+                # Transform timestamp to distance
+                df_group = self.__timestamp_to_distance_helper(df_group)
+                # Train
+                self.__teach_using(df_group, Constants.models_path + sensor + '_' + position + '.h5')
+
+    # Function to find most frequent
     # element in a list 
     def __most_frequent(self, my_list):
         
@@ -560,15 +592,15 @@ class Power:
         # Return results
         return prediction, accuracy
 
-    def predict(self, data):
+    def predict(self, features, position):
 
         # Uncompress data
-        data_acc    = data[Constants.sensor_type_accelerometer]
-        data_gyro   = data[Constants.sensor_type_gyroscope]
+        features_acc    = features[Constants.sensor_type_accelerometer]
+        features_gyro   = features[Constants.sensor_type_gyroscope]
 
         # Create dataframes from lists
-        df_acc  = pd.DataFrame(data=data_acc)
-        df_gyro = pd.DataFrame(data=data_gyro)
+        df_acc  = pd.DataFrame(data=features_acc)
+        df_gyro = pd.DataFrame(data=features_gyro)
 
         # Convert timestamp to distance
         df_acc  = self.__timestamp_to_distance_helper(df_acc)
@@ -579,13 +611,14 @@ class Power:
         # Predictions
         # Secondary prediction
         if len(df_gyro) >= Constants.ml_time_periods:
-            prediction, accuracy = self.__predict_using(df_gyro, Constants.models_path + Constants.sensor_type_gyroscope + '.h5')
+            prediction, accuracy = self.__predict_using(df_gyro, Constants.models_path + Constants.sensor_type_gyroscope + '_' + position + '.h5')
+            # Results
+            print('[Result][Gyro] Prediction', prediction, ' ', accuracy, '%')
         # Main prediction
         if len(df_acc) >= Constants.ml_time_periods:
-            prediction, accuracy = self.__predict_using(df_acc, Constants.models_path + Constants.sensor_type_accelerometer + '.h5')
-
-        # Results
-        print('[RESULT] Prediction', prediction, ' ', accuracy, '%')
+            prediction, accuracy = self.__predict_using(df_acc, Constants.models_path + Constants.sensor_type_accelerometer + '_' + position + '.h5')
+            # Results
+            print('[Result][Acc] Prediction', prediction, ' ', accuracy, '%')
 
         # and then return
         return prediction, accuracy

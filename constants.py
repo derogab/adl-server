@@ -34,3 +34,5 @@ class Constants:
     tmp_path = "/tmp/"
     # Debug mode
     debug = False
+    # No ID value
+    no_id_value = -1
