@@ -318,7 +318,7 @@ class Power:
         return df
 
     ### Main method ###
-    def __teach_using(self, df, model_file):
+    def __teach_using(self, df, sensor, position):
 
         # The number of steps within one time segment
         TIME_PERIODS = Constants.ml_time_periods
@@ -329,6 +329,9 @@ class Power:
         # Hyper-parameters
         BATCH_SIZE = Constants.ml_batch_size # https://stats.stackexchange.com/questions/153531/what-is-batch-size-in-neural-network
         EPOCHS = Constants.ml_epoch
+
+        # Model file
+        model_file = Constants.models_path + sensor + '_' + position + '.h5'
 
         # show data
         if debug:
@@ -380,7 +383,7 @@ class Power:
         # Callback list
         callbacks_list = [
             keras.callbacks.ModelCheckpoint(
-                filepath=Constants.tmp_path+'best_model.{epoch:02d}-{val_loss:.2f}.h5',
+                filepath=Constants.tmp_path + 'best_model.' + sensor + '_' + position + '.{epoch:02d}-{val_loss:.2f}.h5',
                 monitor='val_loss', save_best_only=True),
             keras.callbacks.EarlyStopping(monitor='accuracy', patience=1)
         ]
@@ -493,7 +496,7 @@ class Power:
                 # Transform timestamp to distance
                 df_group = self.__timestamp_to_distance_helper(df_group)
                 # Train
-                self.__teach_using(df_group, Constants.models_path + sensor + '_' + position + '.h5')
+                self.__teach_using(df_group, sensor, position)
 
     # Function to find most frequent
     # element in a list 
@@ -514,13 +517,16 @@ class Power:
 
     # Function to predict 
     # using a pretrained model and a set of live data
-    def __predict_using(self, df, model_file):
+    def __predict_using(self, df, sensor, position):
 
         # The number of steps within one time segment
         TIME_PERIODS = Constants.ml_time_periods
         # The steps to take from one segment to the next; if this value is equal to
         # TIME_PERIODS, then there is no overlap between the segments
         STEP_DISTANCE = Constants.ml_step_distance
+
+        # Model file
+        model_file = Constants.models_path + sensor + '_' + position + '.h5'
 
         # Prepare dataframe for training data
         df = self.__prepare_dataframe(df)
@@ -597,12 +603,12 @@ class Power:
         # Predictions
         # Secondary prediction
         if len(df_gyro) >= Constants.ml_time_periods:
-            prediction, accuracy = self.__predict_using(df_gyro, Constants.models_path + Constants.sensor_type_gyroscope + '_' + position + '.h5')
+            prediction, accuracy = self.__predict_using(df_gyro, Constants.sensor_type_gyroscope, position)
             # Results
             print('[Result][Gyro] Prediction', prediction, ' ', accuracy, '%')
         # Main prediction
         if len(df_acc) >= Constants.ml_time_periods:
-            prediction, accuracy = self.__predict_using(df_acc, Constants.models_path + Constants.sensor_type_accelerometer + '_' + position + '.h5')
+            prediction, accuracy = self.__predict_using(df_acc, Constants.sensor_type_accelerometer, position)
             # Results
             print('[Result][Acc] Prediction', prediction, ' ', accuracy, '%')
 
