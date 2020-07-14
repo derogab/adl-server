@@ -73,9 +73,10 @@ class Worker(threading.Thread):
 
                                 # predict sometimes
                                 if index % Constants.something_value == 0:
-                                    prediction, accuracy = self.wizard.predict()
+                                    # no prediction in fake
+                                    # prediction, accuracy = self.wizard.predict()
                                     # send prediction
-                                    self.__send_message(Reply.prediction(prediction))
+                                    self.__send_message(Reply.prediction(0))
                             
 
                             if mode == Constants.request_mode_learning:
@@ -123,7 +124,9 @@ class Worker(threading.Thread):
                             # save received data
                             if self.teacher and mode == Constants.request_mode_learning:
                                 # train all the data
-                                self.teacher.teach()
+                                # warning: no train in fake
+                                # self.teacher.teach()
+                                pass
                     
                     else:
                         print('[Error] Data received error.')       
