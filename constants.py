@@ -37,4 +37,4 @@ class Constants:
     # Debug mode
     debug = False
     # Debug graph axis num value
-    debug_graph_quantity_values = 300
+    debug_graph_quantity_values = 360

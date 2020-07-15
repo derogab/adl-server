@@ -365,7 +365,6 @@ class Power:
         model_m.add(Dense(100, activation='relu'))
         model_m.add(Dense(100, activation='relu'))
         model_m.add(Dense(100, activation='relu'))
-        model_m.add(Dense(100, activation='relu'))
         model_m.add(Flatten())
         model_m.add(Dense(num_classes, activation='softmax'))
 
